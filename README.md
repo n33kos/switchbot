@@ -2,14 +2,8 @@
 
 A scraper to notify a user via slack workflows when a nintendo switch is in stock.
 
-#### `npm run:dev`
 
-Starts the application in development using `nodemon` and `ts-node` to do hot reloading.
-
-#### `npm run build`
-
-Builds the app at `build`, cleaning the folder first.
-
-#### `npm run start`
-
-Starts the app in production by first building the project with `npm run build`, and then executing the compiled JavaScript at `build/index.js`.
+### Usage
+- `npm install`
+- `npm run start`
+- Enter the timeout and slack workflow URL you wish to notify at
