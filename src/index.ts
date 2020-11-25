@@ -3,95 +3,9 @@ import prompt from 'prompt';
 import fetch from 'node-fetch';
 import { get, unescape } from 'lodash';
 import request from 'request';
+import sitesConfig from './config';
 
-interface ApiUrls {
-  apiUrl: string;
-  pdp: string;
-  title: string;
-}
-
-interface SiteConfig {
-  name?: string;
-  parsingMethod?: string;
-
-  // Scraper Version
-  urls?: string[];
-  titleQuerySelector?: string;
-  checkoutButtonQuerySelector?: string;
-  inStockText?: string;
-
-  // API Version
-  apiUrls?: ApiUrls[];
-  inStockApiText?: string;
-  apiJsonPath?: string;
-}
-
-const sites: SiteConfig[] = [
-  {
-    name: 'Best Buy',
-    urls: [
-      'https://www.bestbuy.com/site/nintendo-switch-32gb-console-gray-joy-con/6364253.p?skuId=6364253',
-      'https://www.bestbuy.com/site/nintendo-switch-32gb-console-neon-red-neon-blue-joy-con/6364255.p?skuId=6364255',
-    ],
-    titleQuerySelector: '.sku-title h1',
-    checkoutButtonQuerySelector: '.fulfillment-add-to-cart-button .btn',
-    inStockText: 'Add to Cart',
-    parsingMethod: 'scrape',
-  },
-  {
-    name: 'Target',
-    apiUrls: [
-      {
-        apiUrl:
-          'https://redsky.target.com/v1/location_details/77464001?latitude=39.863&longitude=-104.988&zip=80260&state=CO&storeId=1372&fulfillment_test_mode=grocery_opu_team_member_test',
-        pdp:
-          'https://www.target.com/p/nintendo-switch-with-neon-blue-and-neon-red-joy-con/-/A-77464001',
-        title: 'Nintendo Switch with Neon Blue and Neon Red Joy-Con',
-      },
-      {
-        apiUrl:
-          'https://redsky.target.com/v1/location_details/77464002?latitude=39.863&longitude=-104.988&zip=80260&state=CO&storeId=1372&fulfillment_test_mode=grocery_opu_team_member_test',
-        pdp:
-          'https://www.target.com/p/nintendo-switch-with-gray-joy-con/-/A-77464002',
-        title: 'Nintendo Switch with Gray Joy-Con',
-      },
-    ],
-    inStockApiText: 'AVAILABLE',
-    apiJsonPath: 'product.ship_methods.availability_status',
-    parsingMethod: 'api',
-  },
-  {
-    name: 'Walmart',
-    urls: [
-      'https://www.walmart.com/ip/Nintendo-Switch-Bundle-with-Mario-Red-Joy-Con-20-Nintendo-eShop-Credit-Carrying-Case/542896404',
-      'https://www.walmart.com/ip/Nintendo-Switch-Bundle-with-Mario-Kart-8-Deluxe-Gray/391444954',
-      'https://www.walmart.com/ip/Nintendo-Switch-Bundle-with-Mario-Kart-8-Deluxe-Neon-Red-Blue/539262525',
-    ],
-    titleQuerySelector: 'h1.prod-ProductTitle',
-    checkoutButtonQuerySelector: '.prod-ProductCTA--primary',
-    inStockText: 'Add to cart',
-    parsingMethod: 'scrape',
-  },
-  {
-    name: 'pokemoncenter.com',
-    urls: [
-      'https://www.pokemoncenter.com/product/716-88216/nintendo-switch-with-gray-joy-con',
-      'https://www.pokemoncenter.com/product/716-88217/nintendo-switch-with-neon-blue-and-neon-red-joy-con',
-    ],
-    parsingMethod: 'ld+json',
-  },
-  {
-    name: 'Gamestop',
-    urls: [
-      'https://www.gamestop.com/video-games/switch/consoles/products/nintendo-switch-with-neon-blue-and-neon-red-joy-con/11095819.html',
-      'https://www.gamestop.com/video-games/switch/consoles/products/nintendo-switch-with-gray-joy-con/11095821.html',
-      'https://www.gamestop.com/video-games/switch/consoles/products/nintendo-switch-animal-crossing-new-horizons-edition/11100143.html',
-    ],
-    parsingMethod: 'ld+json',
-  },
-];
-
-async function checkUrlForAvailability(
+async function scrapeUrlForAvailability(
   url: string,
   titleQuerySelector: string | undefined,
   checkoutButtonQuerySelector: string | undefined,
@@ -149,13 +63,9 @@ async function checkApiForAvailability(
   console.log(`  ${titleVal}`);
   const result = await fetch(url, {
     headers: {
-      accept: 'application/json',
-      'accept-language': 'en-US,en;q=0.9',
-      'cache-control': 'no-cache',
-      pragma: 'no-cache',
-      'sec-fetch-dest': 'empty',
-      'sec-fetch-mode': 'cors',
-      'sec-fetch-site': 'same-site',
+      // 🎵 tell me lies, tell me sweet little lies 🎵
+      'User-Agent': 'curl/ 7.64.1',
+      'Accept': '*/*',
     },
     body: undefined,
     method: 'GET',
@@ -167,7 +77,12 @@ async function checkApiForAvailability(
     return false;
   }
 
-  const parsed = await result.json();
+  let parsed = '';
+  try {
+    parsed = await result.json();
+  } catch (error) {
+    console.log(error);
+  }
   const availability = get(parsed, path);
 
   if (availability === inStockText) {
@@ -237,7 +152,7 @@ async function main(timeout: any, slackWorkflowUrl: string) {
   console.log(`\n${date.toLocaleDateString('en-US')} ${date.toTimeString()}`);
 
   const availabilities = [];
-  for (const site of sites) {
+  for (const site of sitesConfig) {
     console.log(`----${site.name}----`);
 
     switch (site.parsingMethod) {
@@ -271,7 +186,7 @@ async function main(timeout: any, slackWorkflowUrl: string) {
         if (site.urls) {
           for (const url of site.urls) {
             if (
-              await checkUrlForAvailability(
+              await scrapeUrlForAvailability(
                 url,
                 site.titleQuerySelector,
                 site.checkoutButtonQuerySelector,
