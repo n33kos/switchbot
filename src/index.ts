@@ -46,7 +46,7 @@ async function scrapeUrlForAvailability(
       return true;
     }
   } catch (error) {
-    console.log(error);
+    // console.log(error);
   }
 
   console.log('    -- Out Of Stock.');
