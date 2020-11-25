@@ -1,4 +1,10 @@
-import { SiteConfig } from "./interfaces";
+import { SiteConfig, PromptConfig } from "./interfaces";
+
+const promptConfig: PromptConfig = {
+  // Uncomment and fill these values to skip the prompt step
+  // timeout: undefined,
+  // slackUrl: undefined,
+};
 
 const sitesConfig: SiteConfig[] = [
   {
@@ -68,4 +74,4 @@ const sitesConfig: SiteConfig[] = [
   },
 ];
 
-export default sitesConfig;
+export { sitesConfig, promptConfig };

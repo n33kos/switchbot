@@ -3,7 +3,7 @@ import prompt from 'prompt';
 import fetch from 'node-fetch';
 import { get, unescape } from 'lodash';
 import request from 'request';
-import sitesConfig from './config';
+import { sitesConfig, promptConfig } from './config';
 
 async function scrapeUrlForAvailability(
   url: string,
@@ -209,22 +209,30 @@ async function main(timeout: any, slackWorkflowUrl: string) {
   setTimeout(() => main(timeout, slackWorkflowUrl), timeout * 1000);
 }
 
-const schema = {
-  properties: {
-    timeout: {
-      default: 60,
-      message: 'Timeout between checks (seconds)',
+if (promptConfig && promptConfig.slackUrl && promptConfig.timeout) {
+  main(
+    promptConfig.timeout,
+    promptConfig.slackUrl
+  );
+} else {
+  const schema = {
+    properties: {
+      timeout: {
+        default: 60,
+        message: 'Timeout between checks (seconds)',
+      },
+      slackWorkflowUrl: {
+        message: 'Slack workflow URL',
+      },
     },
-    slackWorkflowUrl: {
-      message: 'Slack workflow URL',
-    },
-  },
-};
+  };
 
-prompt.start();
-prompt.get(schema, function(
-  err: any,
-  { timeout, slackWorkflowUrl }: any,
-) {
-  main(timeout, slackWorkflowUrl);
-});
+  prompt.start();
+  prompt.get(schema, function (
+    err: any,
+    { timeout, slackWorkflowUrl }: any,
+  ) {
+    main(timeout, slackWorkflowUrl);
+  });
+}
+

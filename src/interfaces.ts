@@ -1,3 +1,8 @@
+export interface PromptConfig {
+  timeout?: number;
+  slackUrl?: string;
+}
+
 export interface ApiUrls {
   apiUrl: string;
   pdp: string;
