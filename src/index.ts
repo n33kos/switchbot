@@ -133,7 +133,8 @@ async function sendSlack(availabilities: any, slackWorkflowUrl: string) {
   try {
     const message = `
       *🤩It's Time To Buy🤩*
-      ${availabilities.map((url: any) => `* ${url}`).join('')}
+      ${availabilities.map((url: any) => `
+      * ${url}`).join('')}
     `;
     console.log('Sending Slack Message... ');
     request.post({
